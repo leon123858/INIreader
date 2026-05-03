@@ -23,3 +23,13 @@ If you chose to download the standalone `.exe` and want to open `.ini` files by 
 5. Browse to the folder where you saved `INIreader.exe`, select it, and click **Open**.
 
 Now, all `.ini` files will automatically open with INIreader.
+
+## Deploy
+
+```bash
+# after update version in makefile
+make release
+git add .
+git commit -m "vX.X.X"
+git push origin vX.X.X
+```
