@@ -4,105 +4,292 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>INIreader</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 1rem; background-color: #f5f5f5; }
-    h1 { margin-top: 0; }
-    #controls { margin-bottom: 1rem; }
-    #filename { font-weight: bold; }
-    .btn { padding: 0.5rem 1rem; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
-    .btn:hover { background: #eaeaea; }
-    .btn-danger { background: #c62828; color: white; border: none; }
-    .btn-danger:hover { background: #b71c1c; }
-    .btn-add { background: #2e7d32; color: white; border: none; }
-    .btn-add:hover { background: #1b5e20; }
+    :root {
+      --bg-color: #f8fafc;
+      --text-color: #334155;
+      --accent-color: #3b82f6;
+      --accent-hover: #2563eb;
+      --danger-color: #ef4444;
+      --danger-hover: #dc2626;
+      --success-color: #10b981;
+      --success-hover: #059669;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --header-bg: #f1f5f9;
+      --header-hover: #e2e8f0;
+    }
+    body { 
+      font-family: 'Inter', sans-serif; 
+      margin: 0; 
+      padding: 2rem; 
+      background-color: var(--bg-color); 
+      color: var(--text-color);
+    }
+    h1 { 
+      margin-top: 0; 
+      font-weight: 600;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+    #controls { 
+      margin-bottom: 2rem; 
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      background: var(--card-bg);
+      padding: 1.25rem 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      position: sticky;
+      top: 1rem;
+      z-index: 10;
+    }
+    #controls > div { width: 100%; margin-bottom: 0.25rem; font-size: 0.95rem; }
+    #filename { font-weight: 600; color: var(--accent-color); word-break: break-all; }
     
-    #container { display: flex; flex-direction: column; gap: 1rem; }
+    .btn { 
+      padding: 0.5rem 1rem; 
+      cursor: pointer; 
+      border: 1px solid var(--border-color); 
+      background: var(--card-bg); 
+      color: var(--text-color);
+      border-radius: 6px; 
+      font-weight: 500;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+    }
+    .btn:hover { background: var(--header-bg); border-color: #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .btn-primary { background: var(--accent-color); color: white; border: none; }
+    .btn-primary:hover { background: var(--accent-hover); color: white; box-shadow: 0 4px 6px -1px rgba(59,130,246,0.3); border-color: transparent; }
+    .btn-danger { background: var(--danger-color); color: white; border: none; }
+    .btn-danger:hover { background: var(--danger-hover); color: white; box-shadow: 0 4px 6px -1px rgba(239,68,68,0.3); border-color: transparent; }
+    .btn-add { background: var(--success-color); color: white; border: none; }
+    .btn-add:hover { background: var(--success-hover); color: white; box-shadow: 0 4px 6px -1px rgba(16,185,129,0.3); border-color: transparent; }
+    .btn-sm { padding: 0.375rem 0.625rem; font-size: 0.8rem; border-radius: 4px; }
+    
+    #container { display: flex; flex-direction: column; gap: 1.25rem; }
     
     .section-block {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      transition: box-shadow 0.2s ease;
+    }
+    .section-block:hover {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     
     .section-header {
-      background: #e0e0e0;
-      padding: 0.5rem 1rem;
+      background: var(--header-bg);
+      padding: 0.875rem 1.25rem;
       display: flex;
       align-items: center;
       cursor: pointer;
       user-select: none;
+      transition: background 0.2s ease;
+      border-bottom: 1px solid transparent;
+    }
+    .section-header:hover {
+      background: var(--header-hover);
+    }
+    .section-block:not(.is-collapsed) .section-header {
+      border-bottom-color: var(--border-color);
     }
     
+    .chevron {
+      width: 20px;
+      height: 20px;
+      margin-right: 0.5rem;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .chevron svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .is-collapsed .chevron {
+      transform: rotate(-90deg);
+    }
+
     .section-header.commented {
+      opacity: 0.6;
+    }
+    .section-header.commented h3 {
       text-decoration: line-through;
-      opacity: 0.7;
     }
     
     .section-header h3 {
       margin: 0;
       flex-grow: 1;
       font-size: 1.1rem;
+      font-weight: 600;
+      color: #1e293b;
     }
     .section-header h3[contenteditable="true"] {
-      background: rgba(255,255,255,0.5);
-      padding: 0.2rem;
-      border-radius: 4px;
+      background: rgba(255,255,255,0.7);
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
       margin-right: 1rem;
+      transition: background 0.2s;
+    }
+    .section-header h3[contenteditable="true"]:focus {
+      background: #fff;
+      outline: 2px solid var(--accent-color);
     }
 
-    .section-header .section-controls {
+    .section-controls {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.75rem;
       align-items: center;
     }
 
     .section-content {
-      padding: 1rem;
-      display: block; /* can be hidden */
+      padding: 1.25rem;
+      display: block;
+      animation: slideDown 0.3s ease-out;
     }
     .section-content.collapsed {
       display: none;
     }
 
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     table {
       width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 0.5rem;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
     }
     th, td {
-      border: 1px solid #eee;
-      padding: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.75rem 1rem;
       text-align: left;
     }
-    th { background: #fafafa; font-weight: normal; color: #666; }
+    th { 
+      background: #f8fafc; 
+      font-weight: 500; 
+      color: #64748b; 
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    tr:last-child td { border-bottom: none; }
+    
     td[contenteditable="true"] {
-      background-color: #fff;
+      background-color: transparent;
       outline: none;
+      border-radius: 4px;
+      transition: background 0.2s, box-shadow 0.2s;
     }
     td[contenteditable="true"]:focus {
-      background-color: #f0f8ff;
+      background-color: #fff;
+      box-shadow: 0 0 0 2px var(--accent-color) inset;
+    }
+    td[contenteditable="true"]:hover:not(:focus) {
+      background-color: #f1f5f9;
+    }
+    [contenteditable="true"][placeholder]:empty:before {
+      content: attr(placeholder);
+      color: #94a3b8;
+      pointer-events: none;
     }
 
     .row-commented {
+      background-color: #f8fafc;
+    }
+    .row-commented td.key, .row-commented td.value {
       text-decoration: line-through;
-      color: #999;
+      color: #94a3b8;
+    }
+    
+    /* Custom Checkbox */
+    input[type="checkbox"] {
+      accent-color: var(--accent-color);
+      width: 1rem;
+      height: 1rem;
+      cursor: pointer;
+    }
+    label {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      color: #475569;
+    }
+    label:hover {
+      color: var(--text-color);
+    }
+    
+    .actions-cell {
+      display: flex;
+      gap: 0.5rem;
     }
 
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
 <body>
   <h1>INIreader</h1>
   <div id="controls">
-    <div style="margin-bottom: 0.5rem;">
-      <span>目前開啟的檔案: <span id="filename">(未載入)</span></span>
+    <div style="display: flex; gap: 1rem; align-items: center; width: 100%;">
+      <span style="flex-shrink: 0;">目前開啟的檔案: <span id="filename">(未載入)</span></span>
+      <input type="text" id="search-input" placeholder="搜尋 Section / Key / Value..." style="flex-grow: 1; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); font-family: inherit; font-size: 0.875rem; outline: none; transition: border-color 0.2s;">
     </div>
-    <button class="btn" id="open">開啟檔案</button>
-    <button class="btn" id="newfile">新建檔案</button>
-    <button class="btn btn-add" id="add-section">新增區段 (Section)</button>
-    <button class="btn" id="save">儲存</button>
-    <button class="btn" id="saveas">另存新檔</button>
+    <button class="btn btn-primary" id="open">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+      開啟檔案
+    </button>
+    <button class="btn" id="newfile">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      新建檔案
+    </button>
+    <button class="btn btn-add" id="add-section">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+      新增區段 (Section)
+    </button>
+    <button class="btn" id="expand-all">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>
+      全部展開
+    </button>
+    <button class="btn" id="collapse-all">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 11 12 6 17 11"></polyline><polyline points="7 18 12 13 17 18"></polyline></svg>
+      全部縮起
+    </button>
+    <button class="btn btn-primary" id="save">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+      儲存
+    </button>
+    <button class="btn" id="saveas">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+      另存新檔
+    </button>
   </div>
   
   <div id="container">
@@ -112,6 +299,7 @@
   <script>
     // Data structures for UI state
     let uiSections = [];
+    let searchTerm = '';
 
     async function loadData() {
       try {
@@ -167,12 +355,38 @@
           return;
         }
 
+        const secMatches = searchTerm === '' || sec.name.toLowerCase().includes(searchTerm);
+        let hasMatchedLine = false;
+        const lineMatchStatus = sec.lines.map(line => {
+          if (searchTerm === '') return true;
+          let textToSearch = '';
+          if (line.type === 'comment' || line.type === 'blank') {
+            textToSearch = line.value || '';
+          } else {
+            textToSearch = (line.key || '') + ' ' + (line.value || '');
+          }
+          const matches = textToSearch.toLowerCase().includes(searchTerm);
+          if (matches) hasMatchedLine = true;
+          return matches;
+        });
+
+        if (searchTerm !== '' && !secMatches && !hasMatchedLine) {
+          return; // Skip rendering section entirely
+        }
+
         const secBlock = document.createElement('div');
-        secBlock.className = 'section-block';
+        const isCollapsed = searchTerm !== '' ? false : sec.collapsed;
+        secBlock.className = 'section-block' + (isCollapsed ? ' is-collapsed' : '');
 
         // Header
         const header = document.createElement('div');
         header.className = 'section-header' + (sec.commented ? ' commented' : '');
+        
+        // Chevron
+        const chevron = document.createElement('div');
+        chevron.className = 'chevron';
+        chevron.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+        header.appendChild(chevron);
         
         const title = document.createElement('h3');
         if (sec.isGlobal) {
@@ -185,6 +399,12 @@
           });
           // Prevent collapsing when editing title
           title.addEventListener('click', e => e.stopPropagation());
+          title.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.target.blur();
+            }
+          });
         }
 
         const controls = document.createElement('div');
@@ -203,8 +423,8 @@
           controls.appendChild(commentLabel);
 
           const delBtn = document.createElement('button');
-          delBtn.className = 'btn btn-danger';
-          delBtn.textContent = '刪除區段';
+          delBtn.className = 'btn btn-danger btn-sm';
+          delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>刪除';
           delBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (confirm('確定刪除整個區段及其內容？')) {
@@ -222,13 +442,14 @@
         header.addEventListener('click', () => {
           sec.collapsed = !sec.collapsed;
           content.classList.toggle('collapsed', sec.collapsed);
+          secBlock.classList.toggle('is-collapsed', sec.collapsed);
         });
 
         secBlock.appendChild(header);
 
         // Content
         const content = document.createElement('div');
-        content.className = 'section-content' + (sec.collapsed ? ' collapsed' : '');
+        content.className = 'section-content' + (isCollapsed ? ' collapsed' : '');
         
         const table = document.createElement('table');
         table.innerHTML = `
@@ -236,7 +457,7 @@
             <tr>
               <th style="width:30%">鍵 (Key)</th>
               <th style="width:40%">值 (Value)</th>
-              <th style="width:15%">註解</th>
+              <th style="width:15%">狀態</th>
               <th style="width:15%">操作</th>
             </tr>
           </thead>
@@ -245,26 +466,42 @@
         const tbody = table.querySelector('tbody');
 
         sec.lines.forEach((line, lineIndex) => {
+          if (searchTerm !== '' && !secMatches && !lineMatchStatus[lineIndex]) {
+            return;
+          }
+
           const tr = document.createElement('tr');
           const isRowCommented = sec.commented || line.commented || line.type === 'comment';
           if (isRowCommented) tr.classList.add('row-commented');
 
           if (line.type === 'comment' || line.type === 'blank') {
             tr.innerHTML = `
-              <td colspan="2" contenteditable="true" class="value">${line.value || ''}</td>
-              <td>(純註解)</td>
-              <td><button class="btn btn-danger btn-sm delete-row">刪除</button></td>
+              <td colspan="2" contenteditable="true" class="value" placeholder="輸入註解內容...">${line.value || ''}</td>
+              <td><span style="color:#64748b; font-size:0.875rem;">(純註解/空白行)</span></td>
+              <td class="actions-cell"><button class="btn btn-danger btn-sm delete-row" title="刪除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td>
             `;
-            tr.querySelector('.value').addEventListener('input', e => line.value = e.target.textContent);
+            const valTd = tr.querySelector('.value');
+            valTd.addEventListener('input', e => line.value = e.target.textContent);
+            valTd.addEventListener('keydown', e => { if(e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
           } else {
             tr.innerHTML = `
-              <td contenteditable="true" class="key">${line.key || ''}</td>
-              <td contenteditable="true" class="value">${line.value || ''}</td>
-              <td><input type="checkbox" class="row-comment-cb" ${line.commented ? 'checked' : ''} ${sec.commented ? 'disabled' : ''}></td>
-              <td><button class="btn btn-danger btn-sm delete-row">刪除</button></td>
+              <td contenteditable="true" class="key" placeholder="Key">${line.key || ''}</td>
+              <td contenteditable="true" class="value" placeholder="Value">${line.value || ''}</td>
+              <td>
+                <label>
+                  <input type="checkbox" class="row-comment-cb" ${line.commented ? 'checked' : ''} ${sec.commented ? 'disabled' : ''}>
+                  註解
+                </label>
+              </td>
+              <td class="actions-cell"><button class="btn btn-danger btn-sm delete-row" title="刪除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td>
             `;
-            tr.querySelector('.key').addEventListener('input', e => line.key = e.target.textContent);
-            tr.querySelector('.value').addEventListener('input', e => line.value = e.target.textContent);
+            const keyTd = tr.querySelector('.key');
+            const valTd = tr.querySelector('.value');
+            keyTd.addEventListener('input', e => line.key = e.target.textContent);
+            valTd.addEventListener('input', e => line.value = e.target.textContent);
+            keyTd.addEventListener('keydown', e => { if(e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
+            valTd.addEventListener('keydown', e => { if(e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
+            
             tr.querySelector('.row-comment-cb').addEventListener('change', e => {
               line.commented = e.target.checked;
               renderUI();
@@ -282,8 +519,8 @@
         content.appendChild(table);
 
         const addRowBtn = document.createElement('button');
-        addRowBtn.className = 'btn btn-add btn-sm';
-        addRowBtn.textContent = '+ 新增 KV';
+        addRowBtn.className = 'btn btn-primary btn-sm';
+        addRowBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>新增 KV';
         addRowBtn.addEventListener('click', () => {
           sec.lines.push({ type: 'key', key: '', value: '', commented: false });
           renderUI();
@@ -292,7 +529,7 @@
         const addCommentBtn = document.createElement('button');
         addCommentBtn.className = 'btn btn-sm';
         addCommentBtn.style.marginLeft = '0.5rem';
-        addCommentBtn.textContent = '+ 新增註解';
+        addCommentBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>新增註解';
         addCommentBtn.addEventListener('click', () => {
           sec.lines.push({ type: 'comment', value: 'New Comment', commented: true });
           renderUI();
@@ -398,6 +635,27 @@
       } catch (err) {
         alert('另存新檔時發生錯誤: ' + err);
       }
+    });
+
+    document.getElementById('expand-all').addEventListener('click', () => {
+      uiSections.forEach(sec => sec.collapsed = false);
+      searchTerm = '';
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) searchInput.value = '';
+      renderUI();
+    });
+
+    document.getElementById('collapse-all').addEventListener('click', () => {
+      uiSections.forEach(sec => sec.collapsed = true);
+      searchTerm = '';
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) searchInput.value = '';
+      renderUI();
+    });
+
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      searchTerm = e.target.value.toLowerCase();
+      renderUI();
     });
 
     window.addEventListener('DOMContentLoaded', loadData);
