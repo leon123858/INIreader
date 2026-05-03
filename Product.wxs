@@ -1,0 +1,36 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="INIreader" Manufacturer="INIreader" Version="$(var.ProductVersion)" UpgradeCode="A0970111-2222-3333-4444-555566667777">
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+
+    <Feature Id="Main">
+      <ComponentGroupRef Id="AppComponents" />
+      <ComponentGroupRef Id="AppShortcuts" />
+    </Feature>
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="INIreader" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="INIreader" />
+    </StandardDirectory>
+
+    <ComponentGroup Id="AppComponents" Directory="INSTALLFOLDER">
+      <Component Id="MainExecutable" Guid="A0970111-2222-3333-4444-555566668888">
+        <File Id="INIreaderEXE" Source="$(var.SourceDir)\INIreader.exe" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="AppShortcuts" Directory="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="A0970111-2222-3333-4444-555566669999">
+        <Shortcut Id="ApplicationStartMenuShortcut" 
+                  Name="INIreader" 
+                  Description="INI File Editor"
+                  Target="[!INIreaderEXE]"
+                  WorkingDirectory="INSTALLFOLDER"/>
+        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\INIreader" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </ComponentGroup>
+  </Package>
+</Wix>
