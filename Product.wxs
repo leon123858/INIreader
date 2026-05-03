@@ -1,6 +1,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package Name="INIreader" Manufacturer="INIreader" Version="$(var.ProductVersion)" UpgradeCode="A0970111-2222-3333-4444-555566667777">
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
 
     <Feature Id="Main">
       <ComponentGroupRef Id="AppComponents" />
