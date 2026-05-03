@@ -86,14 +86,18 @@ jobs:
             -d SourceDir="$PWD\build\bin" `
             -out "build\bin\INIreader-${{ steps.version.outputs.value }}-windows-x64.msi"
 
-      - name: Upload MSI artifact
+      - name: Upload Release Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: INIreader-windows-x64-msi
-          path: build/bin/*.msi
+          name: INIreader-windows-x64-artifacts
+          path: |
+            build/bin/*.msi
+            build/bin/*.exe
 
       - name: Publish GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: build/bin/*.msi
+          files: |
+            build/bin/*.msi
+            build/bin/*.exe

@@ -19,6 +19,11 @@
     <ComponentGroup Id="AppComponents" Directory="INSTALLFOLDER">
       <Component Id="MainExecutable" Guid="A0970111-2222-3333-4444-555566668888">
         <File Id="INIreaderEXE" Source="$(var.SourceDir)\INIreader.exe" KeyPath="yes" />
+        <ProgId Id="INIreader.INIFile" Description="INI File">
+          <Extension Id="ini" ContentType="text/plain">
+            <Verb Id="open" Command="Open" TargetFile="INIreaderEXE" Argument="&quot;%1&quot;" />
+          </Extension>
+        </ProgId>
       </Component>
     </ComponentGroup>
 
