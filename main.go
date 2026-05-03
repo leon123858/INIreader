@@ -35,6 +35,7 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
+		OnStartup: app.startup,
 		// Windows specific options.  No special configuration is needed here
 		// but we keep the struct to enable future tweaks like disabling
 		// console windows.

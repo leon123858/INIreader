@@ -13,7 +13,7 @@
   },
   "platforms": {
     "windows": {
-      "icon": "build/appicon.png"
+      "icon": "build/inicon.png"
     }
   },
   "info": {

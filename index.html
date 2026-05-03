@@ -5,283 +5,401 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>INIreader</title>
   <style>
-    body {
-      font-family: sans-serif;
+    body { font-family: sans-serif; margin: 0; padding: 1rem; background-color: #f5f5f5; }
+    h1 { margin-top: 0; }
+    #controls { margin-bottom: 1rem; }
+    #filename { font-weight: bold; }
+    .btn { padding: 0.5rem 1rem; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
+    .btn:hover { background: #eaeaea; }
+    .btn-danger { background: #c62828; color: white; border: none; }
+    .btn-danger:hover { background: #b71c1c; }
+    .btn-add { background: #2e7d32; color: white; border: none; }
+    .btn-add:hover { background: #1b5e20; }
+    
+    #container { display: flex; flex-direction: column; gap: 1rem; }
+    
+    .section-block {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .section-header {
+      background: #e0e0e0;
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .section-header.commented {
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+    
+    .section-header h3 {
       margin: 0;
+      flex-grow: 1;
+      font-size: 1.1rem;
+    }
+    .section-header h3[contenteditable="true"] {
+      background: rgba(255,255,255,0.5);
+      padding: 0.2rem;
+      border-radius: 4px;
+      margin-right: 1rem;
+    }
+
+    .section-header .section-controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .section-content {
       padding: 1rem;
-      background-color: #f5f5f5;
+      display: block; /* can be hidden */
     }
-    h1 {
-      margin-top: 0;
+    .section-content.collapsed {
+      display: none;
     }
-    #controls {
-      margin-bottom: 1rem;
-    }
+
     table {
       width: 100%;
       border-collapse: collapse;
+      margin-bottom: 0.5rem;
     }
     th, td {
-      border: 1px solid #ccc;
+      border: 1px solid #eee;
       padding: 0.5rem;
       text-align: left;
     }
-    th {
-      background: #eaeaea;
-    }
+    th { background: #fafafa; font-weight: normal; color: #666; }
     td[contenteditable="true"] {
       background-color: #fff;
+      outline: none;
     }
-    .delete {
-      background: #c62828;
-      color: white;
-      border: none;
-      padding: 0.25rem 0.5rem;
-      cursor: pointer;
+    td[contenteditable="true"]:focus {
+      background-color: #f0f8ff;
     }
-    .delete:hover {
-      background: #b71c1c;
+
+    .row-commented {
+      text-decoration: line-through;
+      color: #999;
     }
-    #filename {
-      font-weight: bold;
-    }
-    #save {
-      margin-left: 0.5rem;
-    }
+
   </style>
 </head>
 <body>
   <h1>INIreader</h1>
   <div id="controls">
-    <span>目前開啟的檔案: <span id="filename">(未載入)</span></span>
-    <button id="open">開啟檔案</button>
-    <button id="newfile">新建檔案</button>
-    <button id="add">新增列</button>
-    <button id="save">儲存</button>
-    <button id="saveas">另存新檔</button>
+    <div style="margin-bottom: 0.5rem;">
+      <span>目前開啟的檔案: <span id="filename">(未載入)</span></span>
+    </div>
+    <button class="btn" id="open">開啟檔案</button>
+    <button class="btn" id="newfile">新建檔案</button>
+    <button class="btn btn-add" id="add-section">新增區段 (Section)</button>
+    <button class="btn" id="save">儲存</button>
+    <button class="btn" id="saveas">另存新檔</button>
   </div>
-  <table id="inidata">
-    <thead>
-      <tr>
-        <th>區段 (Section)</th>
-        <th>鍵 (Key)</th>
-        <th>值 (Value)</th>
-        <th>註解 (Commented)</th>
-        <th>操作 (Actions)</th>
-      </tr>
-    </thead>
-    <tbody id="tablebody">
-    </tbody>
-  </table>
+  
+  <div id="container">
+    <!-- Section blocks will be injected here -->
+  </div>
+
   <script>
-    // Simple frontend script for INIreader.  This script calls Go methods bound
-    // via Wails.  It populates a table with section/key/value rows and
-    // allows editing, adding and deleting rows.  When the user clicks Save,
-    // the data is collected and written back to the current file.
+    // Data structures for UI state
+    let uiSections = [];
 
     async function loadData() {
       try {
         const filenameElem = document.getElementById('filename');
-        const tableBody = document.getElementById('tablebody');
-        // Get current file path from the backend
-        const filepath = await window.backend.App.CurrentFile();
+        const filepath = await window.go.main.App.CurrentFile();
         filenameElem.textContent = filepath || '(未載入)';
-        // Show or hide the "新建檔案" button depending on whether a file is loaded
+        
         const newBtn = document.getElementById('newfile');
-        if (!filepath) {
-          newBtn.style.display = 'inline-block';
-        } else {
-          newBtn.style.display = 'none';
-        }
-        // Get lines from backend
-        const lines = await window.backend.App.GetLines();
-        tableBody.innerHTML = '';
-        if (lines && Array.isArray(lines)) {
-          lines.forEach(line => {
-            const row = document.createElement('tr');
-            // store original type on dataset for later use
-            row.dataset.type = line.type;
-            if (line.type === 'comment') {
-              // For pure comment lines, section and key are empty and the value holds the comment text.
-              // We disable editing of section/key and do not show a comment toggle since a comment line
-              // is always commented. The comment itself remains editable.
-              row.innerHTML =
-                `<td class="section"></td>` +
-                `<td class="key"></td>` +
-                `<td contenteditable="true" class="value">${line.value || ''}</td>` +
-                `<td></td>` +
-                `<td><button class="delete">刪除</button></td>`;
-            } else {
-              // For section and key lines, allow editing and show a comment toggle.
-              row.innerHTML =
-                `<td contenteditable="true" class="section">${line.section || ''}</td>` +
-                `<td contenteditable="true" class="key">${line.key || ''}</td>` +
-                `<td contenteditable="true" class="value">${line.value || ''}</td>` +
-                `<td><input type="checkbox" class="commented" ${line.commented ? 'checked' : ''}></td>` +
-                `<td><button class="delete">刪除</button></td>`;
-            }
-            tableBody.appendChild(row);
-          });
-        }
+        newBtn.style.display = !filepath ? 'inline-block' : 'none';
+
+        const lines = await window.go.main.App.GetLines() || [];
+        
+        // Convert flat lines to structured sections
+        uiSections = [];
+        let currentSection = {
+          name: '',
+          isGlobal: true,
+          commented: false,
+          collapsed: false,
+          lines: []
+        };
+        uiSections.push(currentSection);
+
+        lines.forEach(line => {
+          if (line.type === 'section') {
+            currentSection = {
+              name: line.section || '',
+              isGlobal: false,
+              commented: line.commented,
+              collapsed: false,
+              lines: []
+            };
+            uiSections.push(currentSection);
+          } else {
+            // key, comment, or blank
+            currentSection.lines.push({...line});
+          }
+        });
+
+        renderUI();
       } catch (err) {
         console.error(err);
       }
     }
 
-    // Open file using native dialog
+    function renderUI() {
+      const container = document.getElementById('container');
+      container.innerHTML = '';
+
+      uiSections.forEach((sec, secIndex) => {
+        // Skip rendering global section if it's empty
+        if (sec.isGlobal && sec.lines.length === 0 && uiSections.length > 1) {
+          return;
+        }
+
+        const secBlock = document.createElement('div');
+        secBlock.className = 'section-block';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'section-header' + (sec.commented ? ' commented' : '');
+        
+        const title = document.createElement('h3');
+        if (sec.isGlobal) {
+          title.textContent = 'Global (無區段)';
+        } else {
+          title.textContent = sec.name;
+          title.contentEditable = 'true';
+          title.addEventListener('input', (e) => {
+            sec.name = e.target.textContent;
+          });
+          // Prevent collapsing when editing title
+          title.addEventListener('click', e => e.stopPropagation());
+        }
+
+        const controls = document.createElement('div');
+        controls.className = 'section-controls';
+        
+        if (!sec.isGlobal) {
+          const commentLabel = document.createElement('label');
+          commentLabel.innerHTML = `<input type="checkbox" ${sec.commented ? 'checked' : ''}> 註解區段`;
+          commentLabel.addEventListener('click', e => e.stopPropagation());
+          const commentCb = commentLabel.querySelector('input');
+          commentCb.addEventListener('change', (e) => {
+            sec.commented = e.target.checked;
+            // cascade comment state to children visually
+            renderUI();
+          });
+          controls.appendChild(commentLabel);
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn btn-danger';
+          delBtn.textContent = '刪除區段';
+          delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm('確定刪除整個區段及其內容？')) {
+              uiSections.splice(secIndex, 1);
+              renderUI();
+            }
+          });
+          controls.appendChild(delBtn);
+        }
+
+        header.appendChild(title);
+        header.appendChild(controls);
+        
+        // Toggle collapse
+        header.addEventListener('click', () => {
+          sec.collapsed = !sec.collapsed;
+          content.classList.toggle('collapsed', sec.collapsed);
+        });
+
+        secBlock.appendChild(header);
+
+        // Content
+        const content = document.createElement('div');
+        content.className = 'section-content' + (sec.collapsed ? ' collapsed' : '');
+        
+        const table = document.createElement('table');
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th style="width:30%">鍵 (Key)</th>
+              <th style="width:40%">值 (Value)</th>
+              <th style="width:15%">註解</th>
+              <th style="width:15%">操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        `;
+        const tbody = table.querySelector('tbody');
+
+        sec.lines.forEach((line, lineIndex) => {
+          const tr = document.createElement('tr');
+          const isRowCommented = sec.commented || line.commented || line.type === 'comment';
+          if (isRowCommented) tr.classList.add('row-commented');
+
+          if (line.type === 'comment' || line.type === 'blank') {
+            tr.innerHTML = `
+              <td colspan="2" contenteditable="true" class="value">${line.value || ''}</td>
+              <td>(純註解)</td>
+              <td><button class="btn btn-danger btn-sm delete-row">刪除</button></td>
+            `;
+            tr.querySelector('.value').addEventListener('input', e => line.value = e.target.textContent);
+          } else {
+            tr.innerHTML = `
+              <td contenteditable="true" class="key">${line.key || ''}</td>
+              <td contenteditable="true" class="value">${line.value || ''}</td>
+              <td><input type="checkbox" class="row-comment-cb" ${line.commented ? 'checked' : ''} ${sec.commented ? 'disabled' : ''}></td>
+              <td><button class="btn btn-danger btn-sm delete-row">刪除</button></td>
+            `;
+            tr.querySelector('.key').addEventListener('input', e => line.key = e.target.textContent);
+            tr.querySelector('.value').addEventListener('input', e => line.value = e.target.textContent);
+            tr.querySelector('.row-comment-cb').addEventListener('change', e => {
+              line.commented = e.target.checked;
+              renderUI();
+            });
+          }
+
+          tr.querySelector('.delete-row').addEventListener('click', () => {
+            sec.lines.splice(lineIndex, 1);
+            renderUI();
+          });
+
+          tbody.appendChild(tr);
+        });
+
+        content.appendChild(table);
+
+        const addRowBtn = document.createElement('button');
+        addRowBtn.className = 'btn btn-add btn-sm';
+        addRowBtn.textContent = '+ 新增 KV';
+        addRowBtn.addEventListener('click', () => {
+          sec.lines.push({ type: 'key', key: '', value: '', commented: false });
+          renderUI();
+        });
+        
+        const addCommentBtn = document.createElement('button');
+        addCommentBtn.className = 'btn btn-sm';
+        addCommentBtn.style.marginLeft = '0.5rem';
+        addCommentBtn.textContent = '+ 新增註解';
+        addCommentBtn.addEventListener('click', () => {
+          sec.lines.push({ type: 'comment', value: 'New Comment', commented: true });
+          renderUI();
+        });
+
+        content.appendChild(addRowBtn);
+        content.appendChild(addCommentBtn);
+
+        secBlock.appendChild(content);
+        container.appendChild(secBlock);
+      });
+    }
+
+    // Export flattened data back to backend format
+    function getLinesForSave() {
+      const outLines = [];
+      uiSections.forEach((sec, index) => {
+        // If it's a named section, emit LineTypeSection
+        if (!sec.isGlobal) {
+          // Ensure there is a blank line before the section, unless it's the very first line
+          if (outLines.length > 0 && outLines[outLines.length - 1].type !== 'blank') {
+            outLines.push({ type: 'blank', commented: false });
+          }
+          
+          outLines.push({
+            type: 'section',
+            section: sec.name.trim(),
+            commented: sec.commented
+          });
+        }
+        
+        // Emit its lines
+        sec.lines.forEach(line => {
+          outLines.push({
+            type: line.type || 'key',
+            section: sec.isGlobal ? '' : sec.name.trim(),
+            key: (line.key || '').trim(),
+            value: line.value || '',
+            // If section is commented, child is effectively commented when saved
+            commented: sec.commented || line.commented || line.type === 'comment'
+          });
+        });
+      });
+      return outLines;
+    }
+
     document.getElementById('open').addEventListener('click', async () => {
       try {
-        const result = await window.backend.App.OpenIni();
-        if (result) {
-          // Data loaded successfully; refresh the table
-          loadData();
-        }
+        const result = await window.go.main.App.OpenIni();
+        if (result) loadData();
       } catch (err) {
-        console.error(err);
         alert('開啟檔案時發生錯誤: ' + err);
       }
     });
 
-    // Create a new INI file when no file is loaded
     document.getElementById('newfile').addEventListener('click', async () => {
       try {
-        // For a new file, start with an empty list of lines
-        const emptyLines = [];
-        await window.backend.App.SaveAsLines(emptyLines);
+        await window.go.main.App.SaveAsLines([]);
         alert('已建立新檔案');
         loadData();
       } catch (err) {
-        console.error(err);
         alert('建立新檔案時發生錯誤: ' + err);
       }
     });
 
-    // Add a new empty row to the table
-    document.getElementById('add').addEventListener('click', () => {
-      const tableBody = document.getElementById('tablebody');
-      const row = document.createElement('tr');
-      // default type is key for new entries
-      row.dataset.type = 'key';
-      row.innerHTML =
-        `<td contenteditable="true" class="section"></td>` +
-        `<td contenteditable="true" class="key"></td>` +
-        `<td contenteditable="true" class="value"></td>` +
-        `<td><input type="checkbox" class="commented"></td>` +
-        `<td><button class="delete">刪除</button></td>`;
-      tableBody.appendChild(row);
+    document.getElementById('add-section').addEventListener('click', () => {
+      uiSections.push({
+        name: 'NewSection',
+        isGlobal: false,
+        commented: false,
+        collapsed: false,
+        lines: []
+      });
+      renderUI();
     });
 
-    // Handle deletion of a row when clicking the Delete button
-    document.getElementById('tablebody').addEventListener('click', (event) => {
-      if (event.target.classList.contains('delete')) {
-        const row = event.target.closest('tr');
-        if (row) row.remove();
-      }
-    });
-
-    // Save the current table lines back to the backend
     document.getElementById('save').addEventListener('click', async () => {
       try {
-        const tableBody = document.getElementById('tablebody');
-        const rows = tableBody.querySelectorAll('tr');
-        const lines = [];
-        rows.forEach(row => {
-          const section = row.querySelector('.section').textContent.trim();
-          const key = row.querySelector('.key').textContent.trim();
-          const value = row.querySelector('.value').textContent;
-          // Determine line type: use dataset if exists, otherwise infer from cell contents
-          let type = row.dataset.type;
-          if (!type) {
-            // infer type based on contents
-            if (section && !key && !value) {
-              type = 'section';
-            } else if (!section && !key && value) {
-              type = 'comment';
-            } else if (!section && !key && !value) {
-              type = 'blank';
-            } else {
-              type = 'key';
-            }
-          }
-          // Determine commented status. Comment lines are always commented and do not use the checkbox.
-          let commented;
-          if (type === 'comment') {
-            commented = true;
-          } else {
-            commented = row.querySelector('.commented')?.checked || false;
-          }
-          // Build line object
-          const line = {
-            section: section,
-            key: key,
-            value: value,
-            commented: commented,
-            type: type
-          };
-          lines.push(line);
-        });
-        // Ensure a file is loaded
-        const filepath = await window.backend.App.CurrentFile();
+        const filepath = await window.go.main.App.CurrentFile();
         if (!filepath) {
           alert('沒有載入檔案，無法儲存。');
           return;
         }
-        await window.backend.App.SaveLines(lines);
+        const linesToSave = getLinesForSave();
+        await window.go.main.App.SaveLines(linesToSave);
         alert('已儲存');
-        // Reload data to reflect changes and maintain order
         loadData();
       } catch (err) {
-        console.error(err);
         alert('儲存時發生錯誤: ' + err);
       }
     });
 
-    // Save As - open file dialog and write to chosen path
     document.getElementById('saveas').addEventListener('click', async () => {
       try {
-        const tableBody = document.getElementById('tablebody');
-        const rows = tableBody.querySelectorAll('tr');
-        const lines = [];
-        rows.forEach(row => {
-          const section = row.querySelector('.section').textContent.trim();
-          const key = row.querySelector('.key').textContent.trim();
-          const value = row.querySelector('.value').textContent;
-          let type = row.dataset.type;
-          if (!type) {
-            if (section && !key && !value) {
-              type = 'section';
-            } else if (!section && !key && value) {
-              type = 'comment';
-            } else if (!section && !key && !value) {
-              type = 'blank';
-            } else {
-              type = 'key';
-            }
-          }
-          // Determine commented status. Comment lines are always commented.
-          let commented;
-          if (type === 'comment') {
-            commented = true;
-          } else {
-            commented = row.querySelector('.commented')?.checked || false;
-          }
-          const line = { section: section, key: key, value: value, commented: commented, type: type };
-          lines.push(line);
-        });
-        if (lines.length === 0) {
+        const linesToSave = getLinesForSave();
+        if (linesToSave.length === 0) {
           alert('沒有資料可儲存。');
           return;
         }
-        await window.backend.App.SaveAsLines(lines);
+        await window.go.main.App.SaveAsLines(linesToSave);
         alert('已另存新檔');
         loadData();
       } catch (err) {
-        console.error(err);
         alert('另存新檔時發生錯誤: ' + err);
       }
     });
 
-    // Load data when the page is ready
     window.addEventListener('DOMContentLoaded', loadData);
   </script>
 </body>
