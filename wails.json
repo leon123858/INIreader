@@ -1,0 +1,35 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "INIreader",
+  "outputfilename": "INIreader",
+  "description": "INI file editor built with Go and Wails",
+  "frontend:install": "",
+  "frontend:build": "",
+  "frontend:dev:watcher": "",
+  "frontend:dev:serverUrl": "",
+  "author": {
+    "name": "INIreader Team",
+    "email": "team@example.com"
+  },
+  "platforms": {
+    "windows": {
+      "icon": "build/appicon.png"
+    }
+  },
+  "info": {
+    "companyName": "INIreader Team",
+    "productName": "INIreader",
+    "productVersion": "0.1.0",
+    "copyright": "Copyright (c) 2026 INIreader Team",
+    "comments": "INI file editor built with Go and Wails",
+    "fileAssociations": [
+      {
+        "ext": "ini",
+        "name": "INI File",
+        "description": "Windows INI Configuration File",
+        "iconName": "iniicon",
+        "role": "Editor"
+      }
+    ]
+  }
+}
