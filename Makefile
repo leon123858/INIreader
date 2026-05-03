@@ -2,6 +2,7 @@
 
 # Detect OS: set platform-specific variables
 ifeq ($(OS),Windows_NT)
+    SHELL := cmd.exe
     MKDIR = if not exist "frontend\dist" mkdir "frontend\dist"
     MKDIR_BUILD = if not exist "build" mkdir "build"
     CP    = copy /Y index.html "frontend\dist\index.html"
