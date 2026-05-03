@@ -13,7 +13,7 @@
   },
   "platforms": {
     "windows": {
-      "icon": "build/inicon.png"
+      "icon": "build/appicon.png"
     }
   },
   "info": {
@@ -27,7 +27,7 @@
         "ext": "ini",
         "name": "INI File",
         "description": "Windows INI Configuration File",
-        "iconName": "iniicon",
+        "iconName": "appicon",
         "role": "Editor"
       }
     ]
