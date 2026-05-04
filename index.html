@@ -258,9 +258,9 @@
 <body>
   <h1>INIreader</h1>
   <div id="controls">
-    <div style="display: flex; gap: 1rem; align-items: center; width: 100%;">
-      <span style="flex-shrink: 0;">目前開啟的檔案: <span id="filename">(未載入)</span></span>
-      <input type="text" id="search-input" placeholder="搜尋 Section / Key / Value..." style="flex-grow: 1; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); font-family: inherit; font-size: 0.875rem; outline: none; transition: border-color 0.2s;">
+    <div style="display: flex; gap: 1rem; align-items: center; width: 100%; flex-wrap: wrap;">
+      <span style="flex-shrink: 0; max-width: 100%;">目前開啟的檔案: <span id="filename">(未載入)</span></span>
+      <input type="text" id="search-input" placeholder="搜尋 Section / Key / Value..." style="flex-grow: 1; min-width: 200px; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); font-family: inherit; font-size: 0.875rem; outline: none; transition: border-color 0.2s;">
     </div>
     <button class="btn btn-primary" id="open">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
